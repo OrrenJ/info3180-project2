@@ -1,3 +1,19 @@
 body {
     padding-top: 50px;
 }
+
+.nav-tabs {
+    margin-bottom: 15px;
+}
+
+.row div {
+	border: 1px solid grey;
+	border-radius: 3px;
+	cursor: pointer;
+}
+
+.row div img {
+	max-width: 100%;
+	max-height: 100%;
+	margin: 0 auto;
+}

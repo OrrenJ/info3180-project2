@@ -14,3 +14,10 @@ class RegistrationForm(FlaskForm):
 class LoginForm(FlaskForm):
 	email = EmailField('Email', validators=[InputRequired(), Email()])
 	password = PasswordField('Password', validators=[InputRequired()])
+
+class WishlistAddForm(FlaskForm):
+	title = StringField('Title', validators=[InputRequired(), Length(max=140)])
+	description = StringField('Description', validators=[InputRequired(), Length(max=2048)])
+	url = StringField('URL', validators=[InputRequired(), Length(max=512)])
+	thumbnail_page_url = StringField('Thumbnail Page', validators=[InputRequired(), Length(max=512)])
+	thumbnail_url = StringField('Thumbnail', validators=[InputRequired(), Length(max=512)])

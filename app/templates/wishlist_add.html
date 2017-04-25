@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block main %}
+</br>
+<div class="wishlist-add-form center-block" ng-app="myWishlist" ng-controller="addItemCtrl">
+	<h1 class="page-header">Add Item to Wishlist</h1>
+	{% include 'flash_messages.html' %}
+
+	<form id="wishlist-add-form" action="{{ url_for('wishlist_add') }}" {% if valid %}ng-submit="return addItem()"{% else %}onsubmit="return // thumbnail_chosen //"{% endif %} method="post">
+		{{ form.csrf_token }}
+
+		<input id="auth_token" name="auth_token" type="hidden">
+		<input id="userid" name="userid" type="hidden" value="{{ current_user.id }}">
+		<div class="form-group">
+			{{ form.title.label }}
+			{{ form.title(class='form-control', placeholder="Enter the title of your wishlist entry") }}
+		</div>
+		<div class="form-group">
+			{{ form.description.label }}
+			{{ form.description(class='form-control', placeholder="Enter a description for your wishlist entry") }}
+		</div>
+		<div class="form-group">
+			{{ form.url.label }}
+			{{ form.url(class='form-control', placeholder="Enter a URL for this wishlist entry") }}
+		</div>
+		<div class="form-group">
+			{{ form.thumbnail_page_url.label }}
+			{{ form.thumbnail_page_url(class='form-control', placeholder="Enter a URL for a page that contains a thumbnail to use") }}
+		</div>
+
+		<div id="fetching-thumbnails" class="form-group" hidden>
+			<p>Trying to get thumbnails...</p>
+		</div>
+
+		<div ng-repeat="img in thumbnails track by $index" ng-if="$index % 3 == 0" class="form-group row">
+		    <div ng-click="imageChoice(thumbnails[$index])" class="col-xs-4"><img src='//thumbnails[$index]//'/></div>
+		    <div ng-click="imageChoice(thumbnails[$index + 1])" class="col-xs-4" ng-if="thumbnails.length > ($index + 1)"><img src='//thumbnails[$index + 1]//'/></div>
+		    <div ng-click="imageChoice(thumbnails[$index + 2])" class="col-xs-4" ng-if="thumbnails.length > ($index + 2)"><img src='//thumbnails[$index + 2]//'/></div>
+		</div>
+
+		<div class="form-group">
+			<button ng-click="pickImage()" class="btn btn-primary">Pick Thumbnail</button>
+		</div>
+
+		<div class="form-group">
+			{{ form.thumbnail_url.label }}
+			{{ form.thumbnail_url(class='form-control', placeholder="Enter a URL for a thumbnail to use") }}
+		</div>
+
+		{% if valid %}
+		<button type="submit" name="submit" class="btn btn-primary btn-block">Add To Wishlist</button>
+		{% endif %}
+	</form>
+</div>
+{% endblock %}
+
+{% block js %}
+<script>
+	$("#auth_token").val(btoa('{{ "%s:%s" % (current_user.email, current_user.password) }}'));
+</script>
+
+<script src="/static/js/angular.min.js"></script>
+<script src='/static/js/app.js'></script>
+{% endblock %}

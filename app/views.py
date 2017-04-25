@@ -8,10 +8,12 @@ This file creates your application.
 from app import app, db, login_manager
 from flask import render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, current_user, login_required
-from models import UserProfile
-from forms import RegistrationForm, LoginForm
+from models import UserProfile, ItemProfile
+from forms import RegistrationForm, LoginForm, WishlistAddForm
 import json
 import hashlib
+import base64
+from image_getter import get_images
 
 
 ###
@@ -38,89 +40,191 @@ def login():
     form = LoginForm()
 
     if request.method == "POST" and form.validate_on_submit():
-        return redirect(url_for('api_users_login'), code=307)
+        response = json.loads(api_users_login())
+        if response.get('error') == None and response.get('message') == 'Success':
+            data = response.get('data')
+            user = data.get('user')
+            email = user.get('email')
+            # since emails are unique
+            user = UserProfile.query.filter_by(email=email).first()
+            login_user(user)
+            next = request.args.get('next')
+
+            authtoken = base64.b64encode("%s:%s" % (user.email, user.password))
+            return redirect(url_for('wishlist_add'))
 
     flash_errors(form)
     return render_template('login.html', form=form)
 
-@app.route('/api/users/register', methods=["GET", "POST"])
+@app.route('/wishlist/add', methods=["GET", "POST"])
+@login_required
+def wishlist_add():
+    form = WishlistAddForm()
+    valid=False
+
+    if request.method == "POST" and form.validate_on_submit():
+        valid=True
+
+    flash_errors(form)
+    return render_template('wishlist_add.html', form=form, valid=valid)
+
+@app.route('/api/users/register', methods=["POST"])
 def api_users_register():
-    if request.method == "POST":
 
-        if 'email' not in request.form \
-        or 'name' not in request.form \
-        or 'password' not in request.form \
-        or 'age' not in request.form \
-        or 'gender' not in request.form :
-            output = { "error": True, "data": {}, "message": "Invalid request format" }
-        else:
-            email = request.form.get('email')
-            name = request.form.get('name')
-            password = request.form.get('password')
-            hash_pass = hashlib.sha512(password).hexdigest()
-            age = request.form.get('age')
-            gender = request.form.get('gender')
-            image = "avatar.jpg"
-
-            existing = UserProfile.query.filter_by(email=email).all()
-
-            # check if user exists
-            if len(existing) > 0:
-                output = { "error": True, "data": {}, "message": "Email address already in use" }
-            else:
-                # current time in milliseconds, guaranteed unique
-                new_user = UserProfile(email, name, hash_pass, age, gender)
-                db.session.add(new_user)
-                db.session.commit()
-
-                data =  { 
-                            "user": {
-                                "id": new_user.id,
-                                "name": new_user.name,
-                                "email": new_user.email,
-                                "age": new_user.age,
-                                "gender": new_user.gender,
-                                "image": image
-                            } 
-                        }
-
-                output = { "error": None, "data": data, "message": "Success" }
-            # endif
-        #endif
+    if 'email' not in request.form \
+    or 'name' not in request.form \
+    or 'password' not in request.form \
+    or 'age' not in request.form \
+    or 'gender' not in request.form :
+        output = { "error": True, "data": {}, "message": "Invalid request format" }
     else:
-        output = { "error": True, "data": {}, "message": "Method not allowed" }
+        email = request.form.get('email')
+        name = request.form.get('name')
+        password = request.form.get('password')
+        hash_pass = hashlib.sha512(password).hexdigest()
+        age = request.form.get('age')
+        gender = request.form.get('gender')
+        image = "avatar.jpg"
 
+        existing = UserProfile.query.filter_by(email=email).all()
+
+        # check if user exists
+        if len(existing) > 0:
+            output = { "error": True, "data": {}, "message": "Email address already in use" }
+        else:
+            # current time in milliseconds, guaranteed unique
+            new_user = UserProfile(email, name, hash_pass, age, gender)
+            db.session.add(new_user)
+            db.session.commit()
+
+            data =  { 
+                        "user": {
+                            "id": new_user.id,
+                            "name": new_user.name,
+                            "email": new_user.email,
+                            "age": new_user.age,
+                            "gender": new_user.gender,
+                            "image": image
+                        } 
+                    }
+
+            output = { "error": None, "data": data, "message": "Success" }
+
+    return json.dumps(output, indent=4, sort_keys=True)
+
+# route to display error if get
+@app.route('/api/users/register', methods=["GET"])
+def api_users_register_error():
+    output = { "error": True, "data": {}, "message": "Method not allowed" }
     return json.dumps(output, indent=4, sort_keys=True)
 
 @app.route('/api/users/login', methods=["GET", "POST"])
 def api_users_login():
-    if request.method == "POST":
 
-        if 'email' not in request.form \
-        or 'password' not in request.form:
+    if 'email' not in request.form \
+    or 'password' not in request.form:
+        output = { "error": True, "data": {}, "message": "Invalid request format" }
+    else:
+        email = request.form.get('email')
+        password = request.form.get('password')
+        hash_pass = hashlib.sha512(password).hexdigest()
+
+        user = UserProfile.query.filter_by(email=email, password=hash_pass).first()
+
+        if user is None:
+            output = { "error": True, "data": {}, "message": "Incorrect username or password" }
+        else:
+            data =  {
+                        "user": {
+                            "email": user.email,
+                            "name": user.name
+                        }
+                    }
+
+            output = { "error": None, "data": data, "message": "Success" }
+
+    return json.dumps(output, indent=4, sort_keys=True)
+
+# route to display error if get
+@app.route('/api/users/login', methods=["GET"])
+def api_users_login_error():
+    output = { "error": True, "data": {}, "message": "Method not allowed" }
+    return json.dumps(output, indent=4, sort_keys=True)
+
+@app.route('/api/users/<userid>/wishlist', methods=["POST"])
+def api_wishlist_add(userid):
+
+    auth = request.authorization
+    email = auth.get('username')
+    password = auth.get('password')
+
+    user = UserProfile.query.filter_by(id=userid, email=email, password=password).first()
+
+    if user is None:
+        output = { "error": True, "data": {}, "message": "Authorization failure" }
+    else:
+
+        if 'title' not in request.form \
+        or 'description' not in request.form \
+        or 'url' not in request.form \
+        or 'thumbnail_url' not in request.form:
             output = { "error": True, "data": {}, "message": "Invalid request format" }
         else:
-            email = request.form.get('email')
-            password = request.form.get('password')
-            hash_pass = hashlib.sha512(password).hexdigest()
 
-            user = UserProfile.query.filter_by(email=email, password=hash_pass).first()
+            title = request.form.get('title')
+            description = request.form.get('description')
+            url = request.form.get('url')
+            thumbnail_url = request.form.get('thumbnail_url')
 
-            if user is None:
-                output = { "error": True, "data": {}, "message": "Incorrect username or password" }
-            else:
-                data =  {
-                            "user": {
-                                "email": user.email,
-                                "name": user.name
-                            }
+            new_item = ItemProfile(title, description, url, thumbnail_url)
+            db.session.add(new_item)
+            db.session.commit()
+            
+            data = {
+                        "item": {
+                            "id": new_item.id,
+                            "title": new_item.title,
+                            "description": new_item.description,
+                            "url": new_item.url,
+                            "thumbnail_url": new_item.thumbnail_url
                         }
+                    }
+            
+            output = { "error": None, "data": data, "message": "Success" }
+        
+    return json.dumps(output, indent=4, sort_keys=True)
 
-                output = { "error": None, "data": data, "message": "Success" }
+@app.route('/api/users/<userid>/wishlist', methods=["GET"])
+def api_wishlist_get(userid):
+    return "foo"
 
+@app.route('/api/thumbnails', methods=["GET"])
+def api_thumbnails():
+
+    auth = request.authorization
+    email = auth.get('username')
+    password = auth.get('password')
+
+    user = UserProfile.query.filter_by(email=email, password=password).first()
+
+    if user is None:
+        output = { "error": True, "data": {}, "message": "Authorization failure" }
     else:
-        output = { "error": True, "data": {}, "message": "Method not allowed" }
+        if 'url' not in request.args:
+            output = { "error": True, "data": {}, "message": "Invalid request format" }
+        else:
 
+            data = {
+                    "thumbnails": get_images(request.args.get('url'))
+                }
+
+            output =    { "error": None, "data": data, "message": "Success" }
+    return json.dumps(output, indent=4, sort_keys=True)
+
+# route to display error if post
+@app.route('/api/thumbnails', methods=["POST"])
+def api_thumbnails_error():
+    output = { "error": True, "data": {}, "message": "Method not allowed" }
     return json.dumps(output, indent=4, sort_keys=True)
 
 # Flash errors from the form if validation fails
@@ -131,6 +235,20 @@ def flash_errors(form):
                 getattr(form, field).label.text,
                 error
             ), 'danger')
+
+@app.route("/logout")
+@login_required
+def logout():
+    # Logout the user and end the session
+    logout_user()
+    flash('You have logged out.', 'danger')
+    return redirect(url_for('home'))
+
+# user_loader callback. This callback is used to reload the user object from
+# the user ID stored in the session
+@login_manager.user_loader
+def load_user(id):
+    return UserProfile.query.get(int(id))
 
 ###
 # The functions below should be applicable to all Flask apps.
