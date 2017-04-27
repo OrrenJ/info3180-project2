@@ -30,7 +30,11 @@ def register():
     form = RegistrationForm()
 
     if request.method == "POST" and form.validate_on_submit():
-        return redirect(url_for('api_users_register'), code=307)
+        response = json.loads(api_users_register())
+        if response.get('error') == None and response.get('message') == 'Success':
+        	flash("Successfully registered new user", "success")
+        else:
+        	flash("Unable to add user", "danger")
 
     flash_errors(form)
     return render_template('register.html', form=form)
@@ -60,13 +64,34 @@ def login():
 @login_required
 def wishlist_add():
     form = WishlistAddForm()
-    valid=False
 
     if request.method == "POST" and form.validate_on_submit():
-        valid=True
+        response = json.loads(api_wishlist_add(current_user.id))
+        if response.get('error') == None and response.get('message') == 'Success':
+        	flash("Successfully added item to wishlist", "success")
+        else:
+        	flash("Unable to add item to wishlist", "danger")
 
     flash_errors(form)
-    return render_template('wishlist_add.html', form=form, valid=valid)
+    return render_template('wishlist_add.html', form=form)
+
+@app.route('/wishlist', methods=["GET", "POST"])
+@login_required
+def wishlist():
+	return render_template('get_wishlists.html')
+
+@app.route('/users/<userid>/wishlist')
+@login_required
+def user_wishlist(userid):
+
+	name = get_name(userid)
+
+	return render_template('wishlist.html', name=name, userid=userid)
+
+@app.route('/mywishlist')
+@login_required
+def my_wishlist():
+	return render_template('my_wishlist.html')
 
 @app.route('/api/users/register', methods=["POST"])
 def api_users_register():
@@ -118,7 +143,7 @@ def api_users_register_error():
     output = { "error": True, "data": {}, "message": "Method not allowed" }
     return json.dumps(output, indent=4, sort_keys=True)
 
-@app.route('/api/users/login', methods=["GET", "POST"])
+@app.route('/api/users/login', methods=["POST"])
 def api_users_login():
 
     if 'email' not in request.form \
@@ -176,7 +201,7 @@ def api_wishlist_add(userid):
             url = request.form.get('url')
             thumbnail_url = request.form.get('thumbnail_url')
 
-            new_item = ItemProfile(title, description, url, thumbnail_url)
+            new_item = ItemProfile(userid, title, description, url, thumbnail_url)
             db.session.add(new_item)
             db.session.commit()
             
@@ -196,7 +221,39 @@ def api_wishlist_add(userid):
 
 @app.route('/api/users/<userid>/wishlist', methods=["GET"])
 def api_wishlist_get(userid):
-    return "foo"
+
+	auth = request.authorization
+	email = auth.get('username')
+	password = auth.get('password')
+
+	user = UserProfile.query.filter_by(email=email, password=password).first()
+
+	if user is None:
+		output = { "error": True, "data": {}, "message": "Authorization failure" }
+	else:
+		itemssql = ItemProfile.query.filter_by(userid=userid).all()
+
+		items = []
+
+		for i in itemssql:
+
+			item = {
+				"id": i.id,
+				"title": i.title,
+				"description": i.description,
+				"url": i.url,
+				"thumbnail_url": i.thumbnail_url
+			}
+
+			items.append(item)
+
+		data = {
+			"items": items
+		}
+
+		output = { "error": False, "data": data, "message": "Success" }
+
+	return json.dumps(output, indent=4, sort_keys=True)
 
 @app.route('/api/thumbnails', methods=["GET"])
 def api_thumbnails():
@@ -226,6 +283,62 @@ def api_thumbnails():
 def api_thumbnails_error():
     output = { "error": True, "data": {}, "message": "Method not allowed" }
     return json.dumps(output, indent=4, sort_keys=True)
+
+# API route used by front end (not in project requirements)
+@app.route('/api/users', methods=["POST"])
+def api_get_users():
+	
+    auth = request.authorization
+    email = auth.get('username')
+    password = auth.get('password')
+
+    user = UserProfile.query.filter_by(email=email, password=password).first()
+
+    if user is None:
+    	output = { "error": True, "data": {}, "message": "Authoriztion failure" }
+    else:
+    	users = []
+    	userssql = UserProfile.query.all()
+
+    	for u in userssql:
+    		users.append({ "id": u.id, "name": u.name })
+
+    	data = {
+    		"users": users
+    	}
+
+    	output = { "error": False, "data": data, "message": "Success" }
+    
+    return json.dumps(output, indent=4, sort_keys=True)
+
+@app.route('/api/users/<userid>/wishlist/<itemid>', methods=["DELETE"])
+def wishlist_item_delete(userid, itemid):
+
+	auth = request.authorization
+	email = auth.get('username')
+	password = auth.get('password')
+
+	user = UserProfile.query.filter_by(email=email, password=password).first()
+
+	if user is None:
+		output = { "error": True, "data": {}, "message": "Authoriztion failure" }
+	else:
+		ItemProfile.query.filter_by(id=itemid, userid=userid).delete()
+		db.session.commit()
+
+		output = { "error": False, "data": {}, "message": "Success" }
+
+	return json.dumps(output, indent=4, sort_keys=True)
+
+# get user name from id
+def get_name(userid):
+	
+	user = UserProfile.query.filter_by(id=userid).first()
+
+	if user is None:
+		return "N/A"
+	else:
+		return user.name
 
 # Flash errors from the form if validation fails
 def flash_errors(form):

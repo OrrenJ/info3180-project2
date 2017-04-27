@@ -2,54 +2,133 @@ var app = angular.module("myWishlist", []);
 
 app.controller("addItemCtrl", function($scope, $http){
 
-	var userid = $("#userid").val();
 	var token = $("#auth_token").val();
 
-	$http.defaults.headers.common['Authorization'] = 'Basic ' + token;
+	$scope.getThumbnails = function(){
 
-	$scope.thumbnails = {};
-	$scope.thumbnail_chosen = false;
-
-	$scope.addItem = function(){
-
-		$http({
-	        method: "POST",
-	        url: "/api/users/" + userid + "/wishlist",
-	        data: $.param({
-	        	title: $("#title").val(),
-	        	description: $("#description").val(),
-	        	url: $("#url").val(),
-	        	thumbnail_url: $("#thumbnail_url").val()
-	        }),
-	        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-	    }).then(function success(response){
-	    	console.log(response.data);
-	        $scope.response = response.data;
-	    });
-	};
-
-	$scope.pickImage = function(){
-
-		$("#fetching-thumbnails").show();
+		var thumbnail_page_url = $("#thumbnail_page_url").val();
+		if(!/^(?:f|ht)tps?\:\/\//.test(thumbnail_page_url)){
+			thumbnail_page_url = "http://" + thumbnail_page_url;
+		}
 
 		$http({
 			method: "GET",
 			url: "/api/thumbnails",
-			params: { 
-				url: $("#thumbnail_page_url").val()
+			params: {
+				url: thumbnail_page_url
+			},
+			headers: {
+				'Authorization': 'Basic ' + token
 			}
 		}).then(function success(response){
-			$("#fetching-thumbnails").hide();
-			console.log(response.data);
 			$scope.response = response.data;
-			$scope.thumbnails = $scope.response.data.thumbnails;
 		});
 	}
 
-	$scope.imageChoice = function(url){
+	$scope.select = function(thumbnail){
+		$scope.selected = thumbnail;
+	}
 
+	$scope.setThumbnail = function(url){
+		$("#thumbnail_url").val(url);
+	}
 
+	$scope.submit = function(form){
 
+		$http({
+			method: "POST",
+			url: "/wishlist/add",
+			data: $.param({
+				csrf_token: $("#csrf_token").val(),
+				title: $("#title").val(),
+				description: $("#description").val(),
+				url: $("#url").val(),
+				thumbnail_url: $("#thumbnail_url").val()
+			}),
+			headers: { 
+				'Content-Type': 'application/x-www-form-urlencoded',
+				'Authorization': 'Basic ' + token
+			}
+		}).then(function success(response) {
+			var flashes = $(response.data).find("#flashes");
+			$("#flashes").html(flashes);
+		});
+	}
+
+}).config(function($interpolateProvider) {
+	$interpolateProvider.startSymbol('//').endSymbol('//');
+});
+
+app.controller("getUsers", function($scope, $http){
+
+	var token = $("#auth_token").val();
+
+	$http({
+		method: "POST",
+		url: "/api/users",
+		headers: {
+			'Authorization': 'Basic ' + token
+		}
+	}).then(function success(response){
+		r = response.data
+		$scope.users = r.data.users
+	});
+
+}).config(function($interpolateProvider) {
+	$interpolateProvider.startSymbol('//').endSymbol('//');
+});
+
+app.controller("getUserWishlist", function($scope, $http){
+
+	var token = $("#auth_token").val();
+	var userid = $("#user_id").val();
+
+	$http({
+		method: "GET",
+		url: "/api/users/" + userid + "/wishlist",
+		headers: {
+			'Authorization': 'Basic ' + token
+		}
+	}).then(function success(response){
+		r = response.data;
+		$scope.wishlist = r.data.items;
+	});
+
+}).config(function($interpolateProvider) {
+	$interpolateProvider.startSymbol('//').endSymbol('//');
+});
+
+app.controller("getMyWishlist", function($scope, $http){
+
+	var token = $("#auth_token").val();
+	var userid = $("#user_id").val();
+
+	$http({
+		method: "GET",
+		url: "/api/users/" + userid + "/wishlist",
+		headers: {
+			'Authorization': 'Basic ' + token
+		}
+	}).then(function success(response){
+		r = response.data;
+		$scope.wishlist = r.data.items;
+	});
+
+	$scope.setdelete = function(itemid){
+		$scope.todelete = itemid;
+	}
+
+	$scope.remove = function(itemid){
+		$http({
+			method: "DELETE",
+			url: '/api/users/' + userid + '/wishlist/' + itemid,
+			headers: {
+				'Authorization': 'Basic ' + token
+			}
+		}).then(function success(response){
+			location.reload();
+		});
+		
 	}
 
 }).config(function($interpolateProvider) {

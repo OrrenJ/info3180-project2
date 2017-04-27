@@ -4,13 +4,41 @@
 </br>
 <div class="wishlist-add-form center-block" ng-app="myWishlist" ng-controller="addItemCtrl">
 	<h1 class="page-header">Add Item to Wishlist</h1>
-	{% include 'flash_messages.html' %}
+	<div id="flashes">
+		{% include 'flash_messages.html' %}
+	</div>
 
-	<form id="wishlist-add-form" action="{{ url_for('wishlist_add') }}" {% if valid %}ng-submit="return addItem()"{% else %}onsubmit="return // thumbnail_chosen //"{% endif %} method="post">
+	<div id="thumbnail-modal" class="modal fade">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+					<h4 class="modal-title">Pick Thumbnail</h4>
+				</div>
+				<div class="modal-body">
+					<input class="form-control" id="thumbnail_page_url" name="thumbnail_page_url" placeholder="Enter the URL of the page from which you wish to select a thumbnail" type="text">
+					<button type="button" class="btn btn-primary btn-input" ng-click="getThumbnails()">Get Thumbnails</button>
+					<div class="thumbnail-list">
+						<div ng-repeat="img in response.data.thumbnails track by $index" ng-if="$index % 3 == 0" class="row">
+						    <div ng-click="select(response.data.thumbnails[$index])" class="col-xs-4"><img src='//response.data.thumbnails[$index]//'/></div>
+						    <div ng-click="select(response.data.thumbnails[$index] + 1)" class="col-xs-4" ng-if="response.data.thumbnails.length > ($index + 1)"><img src='//response.data.thumbnails[$index + 1]//'/></div>
+						    <div ng-click="select(response.data.thumbnails[$index] + 2)" class="col-xs-4" ng-if="response.data.thumbnails.length > ($index + 2)"><img src='//response.data.thumbnails[$index + 2]//'/></div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<label class="left">//selected//</label>
+					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-primary" data-dismiss="modal" ng-click="setThumbnail(selected)">OK</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<form id="wishlist-add-form" method="post">
 		{{ form.csrf_token }}
 
-		<input id="auth_token" name="auth_token" type="hidden">
-		<input id="userid" name="userid" type="hidden" value="{{ current_user.id }}">
+		<input id="auth_token" name="Authorization" type="hidden">
 		<div class="form-group">
 			{{ form.title.label }}
 			{{ form.title(class='form-control', placeholder="Enter the title of your wishlist entry") }}
@@ -24,32 +52,15 @@
 			{{ form.url(class='form-control', placeholder="Enter a URL for this wishlist entry") }}
 		</div>
 		<div class="form-group">
-			{{ form.thumbnail_page_url.label }}
-			{{ form.thumbnail_page_url(class='form-control', placeholder="Enter a URL for a page that contains a thumbnail to use") }}
-		</div>
-
-		<div id="fetching-thumbnails" class="form-group" hidden>
-			<p>Trying to get thumbnails...</p>
-		</div>
-
-		<div ng-repeat="img in thumbnails track by $index" ng-if="$index % 3 == 0" class="form-group row">
-		    <div ng-click="imageChoice(thumbnails[$index])" class="col-xs-4"><img src='//thumbnails[$index]//'/></div>
-		    <div ng-click="imageChoice(thumbnails[$index + 1])" class="col-xs-4" ng-if="thumbnails.length > ($index + 1)"><img src='//thumbnails[$index + 1]//'/></div>
-		    <div ng-click="imageChoice(thumbnails[$index + 2])" class="col-xs-4" ng-if="thumbnails.length > ($index + 2)"><img src='//thumbnails[$index + 2]//'/></div>
-		</div>
-
-		<div class="form-group">
-			<button ng-click="pickImage()" class="btn btn-primary">Pick Thumbnail</button>
-		</div>
-
-		<div class="form-group">
 			{{ form.thumbnail_url.label }}
-			{{ form.thumbnail_url(class='form-control', placeholder="Enter a URL for a thumbnail to use") }}
+			{{ form.thumbnail_url(class='form-control', placeholder="Enter an image URL for a thumbnail to use") }}
+			<b>or</b>
+			<a href="#thumbnail-modal" role="button" class="btn btn-primary btn-input" data-toggle="modal">Pick Thumbnail From Page</a>
 		</div>
 
-		{% if valid %}
-		<button type="submit" name="submit" class="btn btn-primary btn-block">Add To Wishlist</button>
-		{% endif %}
+		<hr>
+
+		<button type="submit" name="submit" ng-click="submit(this)" class="btn btn-primary btn-block">Add To Wishlist</button>
 	</form>
 </div>
 {% endblock %}

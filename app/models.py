@@ -30,6 +30,7 @@ class UserProfile(db.Model):
         except NameError:
             return str(self.id)  # python 3 support
 
+
     def __repr__(self):
         return '<User %r>' % (self.email)
 
@@ -42,7 +43,8 @@ class ItemProfile(db.Model):
     url = db.Column(db.String(512))
     thumbnail_url = db.Column(db.String(512))
 
-    def __init__(self, title, description, url, thumbnail_url):
+    def __init__(self, userid, title, description, url, thumbnail_url):
+        self.userid = userid
         self.title = title
         self.description = description
         self.url = url

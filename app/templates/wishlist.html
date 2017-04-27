@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block main %}
+<div class="get-user-wishlist-form center-block" ng-app="myWishlist" ng-controller="getUserWishlist">
+	<h1 class="page-header">{{ name }}'s Wishlist</h1>
+	{% include 'flash_messages.html' %}
+
+	<input id="auth_token" name="Authorization" type="hidden">
+	<input id="user_id" name="user_id" value="{{ userid }}" type="hidden">
+	
+	<ul class="wishlist">
+		<a ng-repeat="item in wishlist track by $index" href="// item.url //" target="_blank">
+			<li class="wishlist-item">
+				<img class="wishlist-item-thumbnail" src="// item.thumbnail_url //" />
+				<div class="wishlist-item-info">
+					<h4 class="wishlist-item-title">// item.title //</h4>
+					<p class="wishlist-item-description">// item.description //</p>
+				</div>
+			</li>
+		</a>
+	</ul>
+
+</div>
+{% endblock %}
+
+{% block js %}
+<script>
+	$("#auth_token").val(btoa('{{ "%s:%s" % (current_user.email, current_user.password) }}'));
+</script>
+
+<script src="/static/js/angular.min.js"></script>
+<script src='/static/js/app.js'></script>
+{% endblock %}
