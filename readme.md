@@ -9,19 +9,21 @@ Group members
 Python Libraries Used
 ----------------------
 
-Flask
-Flask-WTF
-Flask-SQLAlchemy
-Flask-Migrate
-Flask-Login
-Flask-Mail
-psycopg2
-gunicorn
-requests
-beautifulsoup4
+- Flask
+- Flask-WTF
+- Flask-SQLAlchemy
+- Flask-Migrate
+- Flask-Login
+- Flask-Mail
+- psycopg2
+- gunicorn
+- requests
+- beautifulsoup4
 
 
 __init__.py
 -----------
 
-Ensure that the line `app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://[user]:[password]@localhost/[database]"` in __init__.py matches the credentials used for your database.
+Locate the following line in __init__.py and ensure that it matches the credentials used for your database.
+
+```app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://[user]:[password]@localhost/[database]"```
