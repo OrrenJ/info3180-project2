@@ -26,4 +26,4 @@ __init__.py
 
 Locate the following line in __init__.py and ensure that it matches the credentials used for your database.
 
-```app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://[user]:[password]@localhost/[database]"```
+```app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://{user}:{password}@localhost/{database}"```
