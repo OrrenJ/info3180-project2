@@ -2,7 +2,7 @@
 
 {% block main %}
 <div class="get-user-wishlist-form center-block" ng-app="myWishlist" ng-controller="getMyWishlist">
-	<h1 class="page-header">My Wishlist</h1>
+	<h1 class="page-header">My Wishlist <a ng-click="share()" role="button" class="btn btn-primary btn-share right"><img class="ic-share" src="{{ url_for('static', filename='ic_share.png') }}" /> Share</a></h1>
 	{% include 'flash_messages.html' %}
 
 	<div id="delete-modal" class="modal fade">
@@ -40,6 +40,11 @@
 		</li>
 	</ul>
 
+	<hr>
+
+	<div class="form-group">
+		<a href="{{ url_for('wishlist_add') }}" role="button" class="btn btn-primary left">Add Item</a>
+	</div>
 </div>
 {% endblock %}
 

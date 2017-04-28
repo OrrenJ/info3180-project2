@@ -19,10 +19,10 @@
 					<input class="form-control" id="thumbnail_page_url" name="thumbnail_page_url" placeholder="Enter the URL of the page from which you wish to select a thumbnail" type="text">
 					<button type="button" class="btn btn-primary btn-input" ng-click="getThumbnails()">Get Thumbnails</button>
 					<div class="thumbnail-list">
-						<div ng-repeat="img in response.data.thumbnails track by $index" ng-if="$index % 3 == 0" class="row">
-						    <div ng-click="select(response.data.thumbnails[$index])" class="col-xs-4"><img src='//response.data.thumbnails[$index]//'/></div>
-						    <div ng-click="select(response.data.thumbnails[$index] + 1)" class="col-xs-4" ng-if="response.data.thumbnails.length > ($index + 1)"><img src='//response.data.thumbnails[$index + 1]//'/></div>
-						    <div ng-click="select(response.data.thumbnails[$index] + 2)" class="col-xs-4" ng-if="response.data.thumbnails.length > ($index + 2)"><img src='//response.data.thumbnails[$index + 2]//'/></div>
+						<div ng-repeat="img in thumbnails track by $index" ng-if="$index % 3 == 0" class="row">
+						    <div ng-click="select(thumbnails[$index])" class="col-xs-4"><img src='//thumbnails[$index]//'/></div>
+						    <div ng-click="select(thumbnails[$index] + 1)" class="col-xs-4" ng-if="thumbnails.length > ($index + 1)"><img src='//thumbnails[$index + 1]//'/></div>
+						    <div ng-click="select(thumbnails[$index] + 2)" class="col-xs-4" ng-if="thumbnails.length > ($index + 2)"><img src='//thumbnails[$index + 2]//'/></div>
 						</div>
 					</div>
 				</div>

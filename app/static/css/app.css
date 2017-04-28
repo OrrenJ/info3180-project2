@@ -6,6 +6,10 @@ body {
 	float: left;
 }
 
+.right {
+	float: right;
+}
+
 a, a:hover {
 	text-decoration: none;
 }
@@ -15,9 +19,8 @@ a, a:hover {
 }
 
 .row div {
-	border: 1px solid grey;
-	border-radius: 3px;
 	cursor: pointer;
+	margin: 4px;
 }
 
 .row div img {
@@ -101,4 +104,23 @@ a, a:hover {
 	margin: 0;
 	padding: 48px 24px;
 	font-size: 24px;
+}
+
+.btn-share {
+	background: #4caf50;
+	border-color: #47a64a;
+}
+
+ .btn-share:hover {
+ 	background: #3c8c3f;
+ 	border-color: #2c662e;
+ }
+
+ .btn-share:active:focus {
+ 	background: #2c662e;
+ 	border-color: #214d22;
+ }
+
+.ic-share {
+	margin-right: 3px;
 }

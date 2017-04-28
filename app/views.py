@@ -55,7 +55,7 @@ def login():
             next = request.args.get('next')
 
             authtoken = base64.b64encode("%s:%s" % (user.email, user.password))
-            return redirect(url_for('wishlist_add'))
+            return redirect(url_for('my_wishlist'))
 
     flash_errors(form)
     return render_template('login.html', form=form)

@@ -1,5 +1,6 @@
 var app = angular.module("myWishlist", []);
 
+// wishlist_add.html
 app.controller("addItemCtrl", function($scope, $http){
 
 	var token = $("#auth_token").val();
@@ -21,7 +22,8 @@ app.controller("addItemCtrl", function($scope, $http){
 				'Authorization': 'Basic ' + token
 			}
 		}).then(function success(response){
-			$scope.response = response.data;
+			var r = response.data;
+			$scope.thumbnails = r.data.thumbnails;
 		});
 	}
 
@@ -59,6 +61,7 @@ app.controller("addItemCtrl", function($scope, $http){
 	$interpolateProvider.startSymbol('//').endSymbol('//');
 });
 
+// get_wishlists.html
 app.controller("getUsers", function($scope, $http){
 
 	var token = $("#auth_token").val();
@@ -70,14 +73,15 @@ app.controller("getUsers", function($scope, $http){
 			'Authorization': 'Basic ' + token
 		}
 	}).then(function success(response){
-		r = response.data
-		$scope.users = r.data.users
+		var r = response.data;
+		$scope.users = r.data.users;
 	});
 
 }).config(function($interpolateProvider) {
 	$interpolateProvider.startSymbol('//').endSymbol('//');
 });
 
+// wishlist.html
 app.controller("getUserWishlist", function($scope, $http){
 
 	var token = $("#auth_token").val();
@@ -90,7 +94,7 @@ app.controller("getUserWishlist", function($scope, $http){
 			'Authorization': 'Basic ' + token
 		}
 	}).then(function success(response){
-		r = response.data;
+		var r = response.data;
 		$scope.wishlist = r.data.items;
 	});
 
@@ -98,6 +102,7 @@ app.controller("getUserWishlist", function($scope, $http){
 	$interpolateProvider.startSymbol('//').endSymbol('//');
 });
 
+// my_wishlist.html
 app.controller("getMyWishlist", function($scope, $http){
 
 	var token = $("#auth_token").val();
@@ -110,9 +115,13 @@ app.controller("getMyWishlist", function($scope, $http){
 			'Authorization': 'Basic ' + token
 		}
 	}).then(function success(response){
-		r = response.data;
+		var r = response.data;
 		$scope.wishlist = r.data.items;
 	});
+
+	$scope.share = function(){
+		alert("Not yet implemented");
+	}
 
 	$scope.setdelete = function(itemid){
 		$scope.todelete = itemid;
