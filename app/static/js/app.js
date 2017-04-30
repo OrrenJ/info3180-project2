@@ -120,7 +120,21 @@ app.controller("getMyWishlist", function($scope, $http){
 	});
 
 	$scope.share = function(){
-		alert("Not yet implemented");
+		var share_to = $("#share_to").val();
+
+		$http({
+			method: "POST",
+			url: '/api/users/' + userid + '/wishlist/share',
+			data: $.param({
+				to: share_to
+			}),
+			headers: {
+				'Authorization': 'Basic ' + token,
+				'Content-Type': 'application/x-www-form-urlencoded'
+			}
+		}).then(function success(response){
+			console.log(response.data);
+		});
 	}
 
 	$scope.setdelete = function(itemid){

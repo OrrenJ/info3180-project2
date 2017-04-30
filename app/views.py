@@ -5,11 +5,12 @@ Werkzeug Documentation:  http://werkzeug.pocoo.org/documentation/
 This file creates your application.
 """
 
-from app import app, db, login_manager
+from app import app, db, login_manager, mail
 from flask import render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, current_user, login_required
 from models import UserProfile, ItemProfile
 from forms import RegistrationForm, LoginForm, WishlistAddForm
+from flask_mail import Message
 import json
 import hashlib
 import base64
@@ -179,13 +180,10 @@ def api_users_login_error():
 @app.route('/api/users/<userid>/wishlist', methods=["POST"])
 def api_wishlist_add(userid):
 
-    auth = request.authorization
-    email = auth.get('username')
-    password = auth.get('password')
+    user = auth_user(request.authorization)
 
-    user = UserProfile.query.filter_by(id=userid, email=email, password=password).first()
-
-    if user is None:
+    if user is None \
+    or user.id != userid:
         output = { "error": True, "data": {}, "message": "Authorization failure" }
     else:
 
@@ -222,15 +220,11 @@ def api_wishlist_add(userid):
 @app.route('/api/users/<userid>/wishlist', methods=["GET"])
 def api_wishlist_get(userid):
 
-	auth = request.authorization
-	email = auth.get('username')
-	password = auth.get('password')
+    user = auth_user(request.authorization)
 
-	user = UserProfile.query.filter_by(email=email, password=password).first()
-
-	if user is None:
+    if user is None:
 		output = { "error": True, "data": {}, "message": "Authorization failure" }
-	else:
+    else:
 		itemssql = ItemProfile.query.filter_by(userid=userid).all()
 
 		items = []
@@ -253,16 +247,12 @@ def api_wishlist_get(userid):
 
 		output = { "error": False, "data": data, "message": "Success" }
 
-	return json.dumps(output, indent=4, sort_keys=True)
+    return json.dumps(output, indent=4, sort_keys=True)
 
 @app.route('/api/thumbnails', methods=["GET"])
 def api_thumbnails():
 
-    auth = request.authorization
-    email = auth.get('username')
-    password = auth.get('password')
-
-    user = UserProfile.query.filter_by(email=email, password=password).first()
+    user = auth_user(request.authorization)
 
     if user is None:
         output = { "error": True, "data": {}, "message": "Authorization failure" }
@@ -288,14 +278,10 @@ def api_thumbnails_error():
 @app.route('/api/users', methods=["POST"])
 def api_get_users():
 	
-    auth = request.authorization
-    email = auth.get('username')
-    password = auth.get('password')
-
-    user = UserProfile.query.filter_by(email=email, password=password).first()
+    user = auth_user(request.authorization)
 
     if user is None:
-    	output = { "error": True, "data": {}, "message": "Authoriztion failure" }
+    	output = { "error": True, "data": {}, "message": "Authorization failure" }
     else:
     	users = []
     	userssql = UserProfile.query.all()
@@ -312,23 +298,61 @@ def api_get_users():
     return json.dumps(output, indent=4, sort_keys=True)
 
 @app.route('/api/users/<userid>/wishlist/<itemid>', methods=["DELETE"])
-def wishlist_item_delete(userid, itemid):
+def api_wishlist_item_delete(userid, itemid):
 
-	auth = request.authorization
-	email = auth.get('username')
-	password = auth.get('password')
+    user = auth_user(request.authorization)
 
-	user = UserProfile.query.filter_by(email=email, password=password).first()
-
-	if user is None:
-		output = { "error": True, "data": {}, "message": "Authoriztion failure" }
-	else:
+    if user is None:
+		output = { "error": True, "data": {}, "message": "Authorization failure" }
+    else:
 		ItemProfile.query.filter_by(id=itemid, userid=userid).delete()
 		db.session.commit()
 
 		output = { "error": False, "data": {}, "message": "Success" }
 
-	return json.dumps(output, indent=4, sort_keys=True)
+    return json.dumps(output, indent=4, sort_keys=True)
+
+@app.route('/api/users/<userid>/wishlist/share', methods=["POST"])
+def api_wishlist_share(userid):
+    
+    user = auth_user(request.authorization)
+
+    if user is None:
+        output = { "error": True, "data": {}, "message": "Authorization failure" }
+    elif 'to' not in request.form:
+        output = { "error": True, "data": {}, "message": "Invalid request format" }
+    else:
+        msg = Message(current_user.name + "'s Pretty Cool Wishlist", sender = current_user.email, recipients=[request.form.get('to')])
+
+        registerurl = url_for('register', _external=True)
+        shareurl = url_for('user_wishlist', userid=userid, _external=True)
+
+        msg.html = "<body> \
+        <h3>%s wants to share their wishlist with you!</h3> \
+        <p>You need to be registered and logged in to see it though.</p> \
+        <a href='%s'>Click here to register a <em>Pretty Cool Wishlist</em> account if you don't already have one.</a> \
+        <br><br> \
+        <a href='%s'>Click here to view %s's wishlist.</a> \
+        </body>" \
+        % (current_user.name, registerurl, shareurl, current_user.name)
+        mail.send(msg)
+        
+        output = { "error": False, "data": {}, "message": "Success" }
+
+    return json.dumps(output, indent=4, sort_keys=True)
+
+# authorise user from auth token
+def auth_user(auth):
+
+    if auth is None \
+    or 'username' not in auth \
+    or 'password' not in auth:
+        return None
+    else:
+        email = auth.get('username')
+        password = auth.get('password')
+
+        return UserProfile.query.filter_by(email=email, password=password).first()
 
 # get user name from id
 def get_name(userid):

@@ -2,7 +2,7 @@
 
 {% block main %}
 <div class="get-user-wishlist-form center-block" ng-app="myWishlist" ng-controller="getMyWishlist">
-	<h1 class="page-header">My Wishlist <a ng-click="share()" role="button" class="btn btn-primary btn-share right"><img class="ic-share" src="{{ url_for('static', filename='ic_share.png') }}" /> Share</a></h1>
+	<h1 class="page-header">My Wishlist <a href="#share-modal" role="button" class="btn btn-primary btn-share right" data-toggle="modal"><img class="ic-share" src="{{ url_for('static', filename='ic_share.png') }}" /> Share</a></h1>
 	{% include 'flash_messages.html' %}
 
 	<div id="delete-modal" class="modal fade">
@@ -23,6 +23,24 @@
 		</div>
 	</div>
 
+	<div id="share-modal" class="modal fade">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+					<h4 class="modal-title">Share Wishlist</h4>
+				</div>
+				<div class="modal-body">
+					<input class="form-control" id="share_to" name="shate_to" placeholder="Enter an email address to share to" type="text">
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">No</button>
+					<button type="button" class="btn btn-primary" data-dismiss="modal" ng-click="share()">Yes</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<input id="auth_token" name="Authorization" type="hidden">
 	<input id="user_id" name="user_id" value="{{ current_user.id }}" type="hidden">
 	
@@ -35,7 +53,6 @@
 					<p class="wishlist-item-description">// item.description //</p>
 				</div>
 			</a>
-			<!--<div class="my-wishlist-item-delete" ng-click="remove(item.id)">&times;</div>-->
 			<a href="#delete-modal" class="my-wishlist-item-delete" data-toggle="modal" ng-click="setdelete(item.id)">&times;</a>
 		</li>
 	</ul>
